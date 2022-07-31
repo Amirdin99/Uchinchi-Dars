@@ -1,7 +1,10 @@
 import 'dart:async';
-
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:uchinchidarsflutter/tools/alerts.dart';
+
+import 'info_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -11,13 +14,13 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  var colorlist = new List<Color>.filled(16,Colors.teal);
-
+  var colorlist = List<Color>.filled(16, Colors.teal);
+  AudioPlayer player = AudioPlayer();
   List<int> numberlist = [];
   int score = 0;
   int time = 0;
-  late Timer timer;
-  int objectindex = 15;
+  Timer? timer;
+  int objectIndex = 15;
 
   @override
   void initState() {
@@ -43,12 +46,12 @@ class _MainScreenState extends State<MainScreen> {
                 Expanded(
                   child: Container(
                     height: 50,
-                    color: Colors.teal,
+                    color: Colors.redAccent,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Time",
+                          "Score",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -68,7 +71,7 @@ class _MainScreenState extends State<MainScreen> {
                 Expanded(
                   child: Container(
                     height: 50,
-                    color: Colors.teal,
+                    color: Colors.blueAccent,
                     child: Column(
                       children: [
                         Text(
@@ -79,7 +82,7 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                         ),
                         Text(
-                          "Time",
+                          "${timeFormat(time)}",
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -112,7 +115,6 @@ class _MainScreenState extends State<MainScreen> {
                       setState(() {
                         click(0);
                       });
-
                     },
                     child: Text(
                       "${numberlist[0]}",
@@ -411,8 +413,10 @@ class _MainScreenState extends State<MainScreen> {
                       color: Colors.teal,
                       child: ElevatedButton(
                         child: Text("Finish"),
-                        style: ElevatedButton.styleFrom(primary: Colors.teal),
-                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(primary: Colors.grey),
+                        onPressed: () {
+                          stopMusic();
+                        },
                       )),
                 ),
                 Expanded(
@@ -421,9 +425,14 @@ class _MainScreenState extends State<MainScreen> {
                       height: 50,
                       color: Colors.teal,
                       child: ElevatedButton(
-                        child: Text("Restart"),
-                        style: ElevatedButton.styleFrom(primary: Colors.teal),
-                        onPressed: () {},
+                        child: const Text("Restart"),
+                        style: ElevatedButton.styleFrom(primary: Colors.indigo),
+                        onPressed: () {
+                          setState(() {
+                            restart();
+                            loadView();
+                          });
+                        },
                       )),
                 ),
               ],
@@ -435,30 +444,31 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void loadView() {
-    objectindex = 15;
+    objectIndex = 15;
     numberlist.clear();
     for (int i = 0; i < 16; i++) {
-      colorlist[i] = i < 15 ? Colors.teal : Colors.white;
+      colorlist[i] = i < 15 ? Colors.brown : Colors.white;
       if (i < 15) {
         numberlist.add(i + 1);
       }
     }
-    //numberlist.shuffle();
+    numberlist.shuffle();
     numberlist.add(16);
     time = 0;
     score = 0;
+    startTimeout();
+    _playFile();
   }
 
   void click(int clickIndex) {
-    if ((clickIndex - objectindex).abs() == 1 ||
-        (clickIndex - objectindex).abs() == 4) {
-      colorlist[objectindex] = Colors.teal;
+    if ((clickIndex - objectIndex).abs() == 1 ||
+        (clickIndex - objectIndex).abs() == 4) {
+      colorlist[objectIndex] = Colors.brown;
       colorlist[clickIndex] = Colors.white;
-
-      int k = numberlist[objectindex];
-      numberlist[objectindex] = numberlist[clickIndex];
+      int k = numberlist[objectIndex];
+      numberlist[objectIndex] = numberlist[clickIndex];
       numberlist[clickIndex] = k;
-      objectindex = clickIndex;
+      objectIndex = clickIndex;
       score++;
       check();
     }
@@ -471,12 +481,52 @@ class _MainScreenState extends State<MainScreen> {
         checked = false;
         break;
       }
-      if (checked) {
-        restart();
-        showAwesomeDialog(context, "Congratulations !!!", "You are win");
-      }
+    }
+    if (checked) {
+      restart();
+      showAwesomeDialog(
+          context, "Congratulations ! ! !", "You are win", score, time);
     }
   }
 
-  void restart() {}
+  void restart() {
+    timer?.cancel();
+    timer = null;
+  }
+
+  void startTimeout() {
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      setState(() {
+        time++;
+      });
+    });
+  }
+
+  String timeFormat(int second) {
+    String min = (second / 60).round() < 10
+        ? '0${(second / 60).round()}'
+        : '${(second / 60).round()}';
+    String sec = (second - (second / 60).round() * 60) < 10
+        ? '0${(second - (second / 60).round() * 60)}'
+        : '${(second - ((second / 60).round() * 60))}';
+    return '${min}:${sec}';
+  }
+
+  @override
+  void dispose() {
+    if (timer != null) {
+      timer?.cancel();
+      timer = null;
+    }
+    super.dispose();
+  }
+
+  void _playFile() async {
+    player.play(UrlSource('sounds/muzika.mp3'));
+    player.resume();
+  }
+
+  void stopMusic() {
+    player?.stop();
+  }
 }

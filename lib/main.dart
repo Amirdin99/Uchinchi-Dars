@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uchinchidarsflutter/screens/main_screen.dart';
+import 'package:uchinchidarsflutter/screens/starting_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
           primarySwatch: Colors.teal,
           visualDensity: VisualDensity.adaptivePlatformDensity),
-      home: const MainScreen(),
+      home:  StartScreen(),
     );
   }
 }
